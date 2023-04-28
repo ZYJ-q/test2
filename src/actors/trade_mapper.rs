@@ -99,28 +99,53 @@ impl PositionMapper {
 // 添加净值数据
 
 impl NetWorkMapper {
-  pub fn insert_net_worth(net_worth: Vec<Value>) -> bool {
+  pub fn insert_net_worth(net_worth: Vec<Value>, id: &str) -> bool {
     let mut coon = get_connect();
 
-    let net_worths = coon.exec_batch(
-      r"INSERT IGNORE INTO networth_histories_2 (time, total_equity)
-      VALUES (:time, :total_equity)",
-      net_worth.iter().map(|p| params! {
-        "time" => &p["time"],
-        "total_equity" => &p["total_equity"],
-      })
-    );
+    if id == "account1" {
+      let net_worths = coon.exec_batch(
+        r"INSERT IGNORE INTO net_worth_1 (time, total_equity)
+        VALUES (:time, :total_equity)",
+        net_worth.iter().map(|p| params! {
+          "time" => &p["time"],
+          "total_equity" => &p["total_equity"],
+        })
+      );
+  
+      match net_worths {
+        Ok(_c) => {
+          println!("insert position success");
+          return true;
+        },
+        Err(e) => {
+          eprintln!("error:{}", e);
+          return false;
+        }
+      }
 
-    match net_worths {
-      Ok(_c) => {
-        println!("insert position success");
-        return true;
-      },
-      Err(e) => {
-        eprintln!("error:{}", e);
-        return false;
+    } else {
+      let net_worths = coon.exec_batch(
+        r"INSERT IGNORE INTO net_worth_2 (time, total_equity)
+        VALUES (:time, :total_equity)",
+        net_worth.iter().map(|p| params! {
+          "time" => &p["time"],
+          "total_equity" => &p["total_equity"],
+        })
+      );
+  
+      match net_worths {
+        Ok(_c) => {
+          println!("insert position success");
+          return true;
+        },
+        Err(e) => {
+          eprintln!("error:{}", e);
+          return false;
+        }
       }
     }
+
+    
   } 
 }
 

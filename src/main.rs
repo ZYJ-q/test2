@@ -1,8 +1,8 @@
 use std::collections::VecDeque;
-use std::{collections::HashMap, fs, time::Duration};
+use std::{fs, time::Duration};
 
 use chrono::Utc;
-use log::{debug, info, warn};
+use log::{info, warn};
 use serde_json::{Map, Value};
 // use tokio::{sync::broadcast::{self, Receiver}};
 use test_alarm::adapters::binance::futures::http::actions::BinanceFuturesApi;
@@ -11,7 +11,7 @@ use test_alarm::actors::*;
 
 #[warn(unused_mut, unused_variables, dead_code)]
 async fn real_time(
-    futures: &Value,
+    futures: &Vec<Value>,
     ori_fund: f64,
 ) {
     //rece: &mut Receiver<&str>){
@@ -23,19 +23,18 @@ async fn real_time(
     // 每个品种的上一个trade_id
 
     // 净值数据
-    // let mut net_worth_histories: VecDeque<Value> = VecDeque::new();
+    let mut net_worth_histories: VecDeque<Value> = VecDeque::new();
 
     info!("begin real time loop");
     // 监控循环
     loop {
         info!("again");
         // json对象
-        let mut response: Map<String, Value> = Map::new();
-        let mut json_data: Map<String, Value> = Map::new();
+        // let mut response: Map<String, Value> = Map::new();
+        // let mut json_data: Map<String, Value> = Map::new();
         let mut map: Map<String, Value> = Map::new();
         map.insert(String::from("productId"), Value::from("TRADER_001"));
-        let now = Utc::now();
-        let date = format!("{}", now.format("%Y/%m/%d %H:%M:%S"));
+        
 
         // 监控服务器状态
        
@@ -44,6 +43,91 @@ async fn real_time(
 
         // 账户余额
         info!("account balance");
+
+
+        for i in 0..futures.len() {
+            let now = Utc::now();
+            let date = format!("{}", now.format("%Y/%m/%d %H:%M:%S"));
+
+            let binance_futures_api = BinanceFuturesApi::new(
+                futures[i].as_object().unwrap().get("base_url").unwrap().as_str().unwrap(),
+                futures[i].as_object().unwrap().get("api_key").unwrap().as_str().unwrap(),
+                futures[i].as_object().unwrap().get("secret_key").unwrap().as_str().unwrap(),
+
+        );
+
+            let mut net_worth: f64 = f64::INFINITY;
+    let mut new_account_object: Map<String, Value> = Map::new();
+    let mut account_object: Map<String, Value> = Map::new();
+    if let Some(data) = binance_futures_api.account(None).await {
+        let v: Value = serde_json::from_str(&data).unwrap();
+        let wallet_total: f64 = v
+            .as_object()
+            .unwrap()
+            .get("totalWalletBalance")
+            .unwrap()
+            .as_str()
+            .unwrap()
+            .parse()
+            .unwrap();
+        let pnl_total: f64 = v
+            .as_object()
+            .unwrap()
+            .get("totalUnrealizedProfit")
+            .unwrap()
+            .as_str()
+            .unwrap()
+            .parse()
+            .unwrap();
+        let notional_total = wallet_total + pnl_total; // 权益 = 余额 + 未实现盈亏
+        let leverage_total = wallet_total / notional_total; // 杠杆率 = 余额 / 权益
+        let total_equity = wallet_total + pnl_total;
+        let margin_balance: f64 = v
+            .as_object()
+            .unwrap()
+            .get("totalMarginBalance")
+            .unwrap()
+            .as_str()
+            .unwrap()
+            .parse()
+            .unwrap();
+        new_account_object.insert(
+            String::from("total_equity"),
+            Value::from(total_equity.to_string()),
+        );
+        new_account_object.insert(
+            String::from("time"), 
+            Value::from(date),
+        );
+        account_object.insert(
+            String::from("wallet"),
+            Value::from(wallet_total.to_string()),
+        );
+        account_object.insert(
+            String::from("notional"),
+            Value::from(notional_total.to_string()),
+        );
+        account_object.insert(
+            String::from("leverage"),
+            Value::from(leverage_total.to_string()),
+        );
+        account_object.insert(
+            String::from("margin"),
+            Value::from(margin_balance.to_string()),
+        );
+        net_worth = notional_total/ori_fund;
+        net_worth_histories.push_back(Value::from(new_account_object));
+    }
+    map.insert(String::from("account"), Value::from(account_object));
+
+    let net_worth_res = trade_mapper::NetWorkMapper::insert_net_worth(Vec::from(net_worth_histories.clone()), futures[i].as_object().unwrap().get("id").unwrap().as_str().unwrap());
+    print!("输出的净值数据信息{}", net_worth_res);
+
+}
+
+
+
+        
 
         // let v = serde_json::from_value(&futures).unwrap();
 
@@ -193,7 +277,7 @@ async fn main() {
         let binance_config = config.get("Binance").unwrap();
         // let binance_future_config = binance_config.get("futures").unwrap();
         // let server_config = config.get("Server").unwrap();
-        let futures = binance_config.get("futures").unwrap();
+        let futures = binance_config.get("futures").unwrap().as_array().unwrap();
         let key = config.get("Alarm").unwrap().get("webhook").unwrap().as_str().unwrap();
         // info!("获取key");
         let mut wxbot = String::from("https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=");

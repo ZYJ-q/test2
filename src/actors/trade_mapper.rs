@@ -99,17 +99,16 @@ impl PositionMapper {
 // 添加净值数据
 
 impl NetWorkMapper {
-  pub fn insert_net_worth(net_worth: Vec<Value>, id: &str) -> bool {
+  pub fn insert_net_worth(net_worth: Vec<Value>) -> bool {
     let mut coon = get_connect();
 
     
       let net_worths = coon.exec_batch(
-        r"INSERT IGNORE INTO net_worth_1 (account_id, time, total_equity)
-        VALUES (:account_id, :time, :total_equity)",
+        r"INSERT IGNORE INTO net_worth (time, net_worth)
+        VALUES (:time, :net_worth)",
         net_worth.iter().map(|p| params! {
-          "account_id" => id,
           "time" => &p["time"],
-          "total_equity" => &p["total_equity"],
+          "net_worth" => &p["net_worth"],
         })
       );
   

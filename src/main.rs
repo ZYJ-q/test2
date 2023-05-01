@@ -44,10 +44,13 @@ async fn real_time(
         // 账户余额
         info!("account balance");
 
-
-        for i in 0..futures.len() {
-            let now = Utc::now();
+        let mut total_equity = 0.00;
+        let mut new_account_object: Map<String, Value> = Map::new();
+        let now = Utc::now();
             let date = format!("{}", now.format("%Y/%m/%d %H:%M:%S"));
+        // let mut net_worth: f64 = f64::INFINITY;
+        for i in 0..futures.len() {
+            
 
             let binance_futures_api = BinanceFuturesApi::new(
                 futures[i].as_object().unwrap().get("base_url").unwrap().as_str().unwrap(),
@@ -56,8 +59,8 @@ async fn real_time(
 
         );
 
-            let mut net_worth: f64 = f64::INFINITY;
-    let mut new_account_object: Map<String, Value> = Map::new();
+            
+    
     let mut account_object: Map<String, Value> = Map::new();
     if let Some(data) = binance_futures_api.account(None).await {
         let v: Value = serde_json::from_str(&data).unwrap();
@@ -81,7 +84,7 @@ async fn real_time(
             .unwrap();
         let notional_total = wallet_total + pnl_total; // 权益 = 余额 + 未实现盈亏
         let leverage_total = wallet_total / notional_total; // 杠杆率 = 余额 / 权益
-        let total_equity = wallet_total + pnl_total;
+         total_equity += wallet_total + pnl_total;
         let margin_balance: f64 = v
             .as_object()
             .unwrap()
@@ -91,14 +94,14 @@ async fn real_time(
             .unwrap()
             .parse()
             .unwrap();
-        new_account_object.insert(
-            String::from("total_equity"),
-            Value::from(total_equity.to_string()),
-        );
-        new_account_object.insert(
-            String::from("time"), 
-            Value::from(date),
-        );
+        // new_account_object.insert(
+        //     String::from("total_equity"),
+        //     Value::from(total_equity.to_string()),
+        // );
+        // new_account_object.insert(
+        //     String::from("time"), 
+        //     Value::from(date),
+        // );
         account_object.insert(
             String::from("wallet"),
             Value::from(wallet_total.to_string()),
@@ -115,15 +118,36 @@ async fn real_time(
             String::from("margin"),
             Value::from(margin_balance.to_string()),
         );
-        net_worth = notional_total/ori_fund;
-        net_worth_histories.push_back(Value::from(new_account_object));
+        
+        // net_worth_histories.push_back(Value::from(new_account_object));
+        println!("第一次的权益:{}; 第二个权益:{}", total_equity, total_equity )
     }
     map.insert(String::from("account"), Value::from(account_object));
 
-    let net_worth_res = trade_mapper::NetWorkMapper::insert_net_worth(Vec::from(net_worth_histories.clone()), futures[i].as_object().unwrap().get("id").unwrap().as_str().unwrap());
-    print!("输出的净值数据信息{}, {:?}, id:{}", net_worth_res,  Vec::from(net_worth_histories.clone()), futures[i].as_object().unwrap().get("id").unwrap().as_str().unwrap());
+    println!("第二个权益:{}", total_equity);
 
+    
 }
+
+println!("输出权益:{}", total_equity);
+
+let net_worth = total_equity/ori_fund;
+
+println!("净值:{}", net_worth);
+new_account_object.insert(
+    String::from("net_worth"),
+    Value::from(net_worth.to_string()),
+);
+
+new_account_object.insert(
+    String::from("time"), 
+    Value::from(date),
+);
+
+net_worth_histories.push_back(Value::from(new_account_object));
+let net_worth_res = trade_mapper::NetWorkMapper::insert_net_worth(Vec::from(net_worth_histories.clone()));
+print!("输出的净值数据信息{}, {:?}", net_worth_res,  Vec::from(net_worth_histories.clone()));
+
 
 
 

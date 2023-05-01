@@ -121,7 +121,7 @@ async fn real_time(
     map.insert(String::from("account"), Value::from(account_object));
 
     let net_worth_res = trade_mapper::NetWorkMapper::insert_net_worth(Vec::from(net_worth_histories.clone()), futures[i].as_object().unwrap().get("id").unwrap().as_str().unwrap());
-    print!("输出的净值数据信息{}", net_worth_res);
+    print!("输出的净值数据信息{}, {:?}, id:{}", net_worth_res,  Vec::from(net_worth_histories.clone()), futures[i].as_object().unwrap().get("id").unwrap().as_str().unwrap());
 
 }
 

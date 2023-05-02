@@ -84,7 +84,7 @@ async fn real_time(
             .unwrap();
         let notional_total = wallet_total + pnl_total; // 权益 = 余额 + 未实现盈亏
         let leverage_total = wallet_total / notional_total; // 杠杆率 = 余额 / 权益
-         total_equity += wallet_total + pnl_total;
+         total_equity += notional_total;
         let margin_balance: f64 = v
             .as_object()
             .unwrap()
@@ -129,9 +129,11 @@ async fn real_time(
     
 }
 
-println!("输出权益:{}", total_equity);
+let origins = ori_fund + ori_fund;
 
-let net_worth = total_equity/ori_fund;
+println!("输出权益:{}, origins:{}", total_equity, origins);
+
+let net_worth = total_equity/origins;
 
 println!("净值:{}", net_worth);
 new_account_object.insert(

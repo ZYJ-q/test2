@@ -8,11 +8,13 @@ use serde_json::{Map, Value};
 use test_alarm::adapters::binance::futures::http::actions::BinanceFuturesApi;
 use test_alarm::actors::*;
 // use test_alarm::models::http_data::*;
+use test_alarm::base::wxbot::WxbotHttpClient;
 
 #[warn(unused_mut, unused_variables, dead_code)]
 async fn real_time(
     futures: &Vec<Value>,
     ori_fund: f64,
+    wx_robot: WxbotHttpClient,
 ) {
     //rece: &mut Receiver<&str>){
     info!("get ready for real time loop");
@@ -148,6 +150,9 @@ new_account_object.insert(
 );
 
 net_worth_histories.push_back(Value::from(new_account_object));
+let sender = "数据概况";
+let content = format!("当前权益: {}, 当前净值: {}", total_equity, net_worth);
+wx_robot.send_text(sender, &content).await;
 let net_worth_res = trade_mapper::NetWorkMapper::insert_net_worth(Vec::from(net_worth_histories.clone()));
 print!("输出的净值数据信息{}, {:?}", net_worth_res,  Vec::from(net_worth_histories.clone()));
 
@@ -310,7 +315,7 @@ async fn main() {
         let mut wxbot = String::from("https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=");
         wxbot.push_str(key);
         info!("wxbot  {}", wxbot);
-        // let wx_robot = WxbotHttpClient::new(&wxbot);
+        let wx_robot = WxbotHttpClient::new(&wxbot);
         info!("preparing...");
 
         // for s_config in server_config{
@@ -379,7 +384,7 @@ async fn main() {
 
         
         info!("created http client");
-        real_time(futures, 500.0).await;
+        real_time(futures, 500.0, wx_robot).await;
     });
 
     // 开始任务

@@ -9,8 +9,8 @@
         "root_name": "nnnn2"
     },
     "Alarm": {
-        "group_name": "交易系统警报群",
-        "webhook": "920aca5f-8420-4757-94ac-e6e3400fcd87"
+        "group_name": "机器人测试",
+        "webhook": "418ae1cd-10f0-4fd8-a8aa-402734fd8701"
     },
     "Binance": {
         "spot": {

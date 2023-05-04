@@ -82,6 +82,7 @@ async fn real_time(
             .unwrap()
             .parse()
             .unwrap();
+        println!("账户的未实现盈亏{}", pnl_total);
         let notional_total = wallet_total + pnl_total; // 权益 = 余额 + 未实现盈亏
         let leverage_total = wallet_total / notional_total; // 杠杆率 = 余额 / 权益
          total_equity += notional_total;

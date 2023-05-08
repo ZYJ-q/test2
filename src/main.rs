@@ -150,9 +150,9 @@ new_account_object.insert(
 );
 
 net_worth_histories.push_back(Value::from(new_account_object));
-let sender = "数据概况";
-let content = format!("当前权益: {}, 当前净值: {}", total_equity, net_worth);
-wx_robot.send_text(sender, &content).await;
+// let sender = "数据概况";
+// let content = format!("当前权益: {}, 当前净值: {}", total_equity, net_worth);
+// wx_robot.send_text(sender, &content).await;
 let net_worth_res = trade_mapper::NetWorkMapper::insert_net_worth(Vec::from(net_worth_histories.clone()));
 print!("输出的净值数据信息{}, {:?}", net_worth_res,  Vec::from(net_worth_histories.clone()));
 
